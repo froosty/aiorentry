@@ -4,6 +4,18 @@ version = "0.1.0"
 description = "Asynchronous client for https://rentry.co/ (https://rentry.org/)"
 authors = ["froosty <froosty.gh@gmail.com>"]
 readme = "README.md"
+license = "MIT"
+repository = "https://github.com/froosty/aiorentry"
+keywords = ["markdown", "pastebin", "rentry"]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: Developers",
+    "Topic :: Text Processing :: Markup",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
 
 [tool.poetry.dependencies]
 python = "^3.10"

@@ -2,6 +2,11 @@
 
 Asynchronous API client for [rentry.co](https://rentry.co) (mirror: [rentry.org](https://rentry.org))
 
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/froosty/aiorentry/lint_and_test.yml)
+[![codecov](https://codecov.io/gh/froosty/aiorentry/graph/badge.svg?token=FJBRTOQ2HR)](https://codecov.io/gh/froosty/aiorentry)
+[![PyPI - Version](https://img.shields.io/pypi/v/aiorentry)](https://pypi.org/project/aiorentry/)
+![GitHub License](https://img.shields.io/github/license/froosty/aiorentry)
+
 ## About
 
 This package allows you to interact with the [rentry.co](https://rentry.co) (or [rentry.org](https://rentry.org)) service.
@@ -177,7 +182,7 @@ session = ClientSession(
 )
 
 
-async with Client('https://rentry.com', session=session) as client:
+async with Client('https://rentry.co', session=session) as client:
     # Your code here
 
 async with session.get(...) as response:
