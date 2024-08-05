@@ -1,5 +1,10 @@
+from unittest.mock import patch
+
+import aiohttp
 import pytest
 from aiohttp import ClientResponseError
+
+from aiorentry.client import Client
 
 
 @pytest.mark.anyio
@@ -194,3 +199,21 @@ async def test_pdf_not_found(client, generate_page):
 
     with pytest.raises(ClientResponseError):
         await client.pdf(page.url)
+
+
+@pytest.mark.anyio
+async def test_custom_client_session(fake_server_url):
+    session = aiohttp.ClientSession()
+
+    with patch('aiohttp.ClientSession.__init__', return_value=None) as mock:
+        async with Client(
+            base_url=fake_server_url,
+            session=session,
+        ):
+            pass
+
+    # Check that the new ClientSession is not initialized inside client
+    assert mock.call_count == 0
+
+    # Check that custom client session wasn't closed
+    assert not session.closed

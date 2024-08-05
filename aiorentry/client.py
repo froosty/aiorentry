@@ -18,7 +18,7 @@ class Client:
 
     __base_url: URL
     __session: ClientSession
-    __close_session: bool = False
+    __custom_session: bool = False
 
     def __init__(
         self,
@@ -34,16 +34,20 @@ class Client:
 
         if session is not None:
             self.__session = session
-        else:
+            self.__custom_session = True
+
+    async def setup(self) -> None:
+        if not self.__custom_session:
             jar = DummyCookieJar()
             self.__session = ClientSession(cookie_jar=jar)
-            self.__close_session = True
 
     async def close(self) -> None:
-        if self.__close_session:
+        if not self.__custom_session:
             await self.__session.close()
 
     async def __aenter__(self) -> Self:
+        await self.setup()
+
         return self
 
     async def __aexit__(
