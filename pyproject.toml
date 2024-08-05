@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aiorentry"
-version = "0.1.0"
+version = "0.1.1"
 description = "Asynchronous client for https://rentry.co/ (https://rentry.org/)"
 authors = ["froosty <froosty.gh@gmail.com>"]
 readme = "README.md"
@@ -59,6 +59,8 @@ include_trailing_comma=true
 
 [tool.pytest.ini_options]
 addopts = "--cov=aiorentry --cov-report html"
+
+[tool.poetry_bumpversion.file."aiorentry/__init__.py"]
 
 [build-system]
 requires = ["poetry-core"]
