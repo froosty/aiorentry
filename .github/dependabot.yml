@@ -1,0 +1,10 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    ignore:
+      # Temporary ignore aiohttp updates
+      - dependency-name: "aiohttp"
+        versions: [">=3.10.0"]
