@@ -1,12 +1,15 @@
 [tool.poetry]
 name = "aiorentry"
 version = "0.1.0"
-description = ""
+description = "Asynchronous client for https://rentry.co/ (https://rentry.org/)"
 authors = ["froosty <froosty.gh@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
+aiohttp = "^3.10.1"
+yarl = "^1.9.4"
+typing-extensions = "^4.12.2"
 
 
 [build-system]
