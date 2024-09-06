@@ -20,7 +20,7 @@ classifiers = [
 [tool.poetry.dependencies]
 python = "^3.10"
 aiohttp = ">=3.9.0,<3.10.0"
-yarl = "1.9.7"
+yarl = "1.9.11"
 typing-extensions = "^4.12.2"
 
 
