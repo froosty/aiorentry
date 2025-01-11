@@ -8,6 +8,7 @@ from aiorentry.models import Page
 
 CSRF_COOKIE_NAME = 'csrftoken'
 CSRF_POST_BODY_NAME = 'csrfmiddlewaretoken'
+SECRET_RAW_ACCESS_CODE_HEADER_NAME = 'rentry-auth'
 
 
 @pytest.fixture
@@ -33,6 +34,21 @@ def generate_page(randomstr):
         )
 
     return factory
+
+
+@pytest.fixture
+def valid_raw_access_code():
+    return uuid.uuid4().hex
+
+
+@pytest.fixture
+def invalid_raw_access_code(valid_raw_access_code):
+    invalid = valid_raw_access_code
+
+    while invalid == valid_raw_access_code:
+        invalid = uuid.uuid4().hex
+
+    return invalid
 
 
 @pytest.fixture
@@ -82,6 +98,7 @@ async def fake_server(
     csrf_token,
     pages_registry,
     randomstr,
+    valid_raw_access_code,
 ):
     async def index(*agrs, **kwargs):
         resp = web.Response()
@@ -203,6 +220,32 @@ async def fake_server(
                 'content': f'Entry {url} does not exist',
             })
 
+        access_code = request.headers.get(
+            SECRET_RAW_ACCESS_CODE_HEADER_NAME,
+            None,
+        )
+
+        if access_code is None:
+            return web.json_response({
+                'status': '403',
+                'content': (
+                    'This page does not have a SECRET_RAW_ACCESS_CODE set. '
+                    'You may still view it over raw by obtaining your own '
+                    'code from Rentry admins and setting it as a '
+                    'custom header: rentry-auth'
+                ),
+            })
+
+        if access_code != valid_raw_access_code:
+            return web.json_response({
+                'status': '403',
+                'content': (
+                    'Value for SECRET_RAW_ACCESS_CODE not found. '
+                    'Please ensure you are using one given to you by '
+                    'Rentry admins.'
+                ),
+            })
+
         page = await pages_registry.get(url)
 
         return web.json_response({
@@ -251,5 +294,7 @@ async def fake_server_url(fake_server):
 
 @pytest.fixture
 async def client(fake_server_url):
-    async with Client(base_url=fake_server_url) as client:
+    async with Client(
+        base_url=fake_server_url,
+    ) as client:
         yield client
