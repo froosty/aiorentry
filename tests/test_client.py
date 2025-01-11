@@ -145,11 +145,19 @@ async def test_delete_page_bad_edit_code(
 
 
 @pytest.mark.anyio
-async def test_raw(client, pages_registry, generate_page):
+async def test_raw(
+    client,
+    pages_registry,
+    generate_page,
+    valid_raw_access_code,
+):
     page = generate_page()
     await pages_registry.add(page)
 
-    text = await client.raw(page.url)
+    text = await client.raw(
+        page.url,
+        secret_raw_access_code=valid_raw_access_code,
+    )
 
     assert text == page.text
 
@@ -163,6 +171,47 @@ async def test_raw_not_found(client, generate_page):
 
     assert exc_info.value.status == 404
     assert exc_info.value.message == f'Entry {page.url} does not exist'
+
+
+@pytest.mark.anyio
+async def test_raw_no_access_code(client, pages_registry, generate_page):
+    page = generate_page()
+    await pages_registry.add(page)
+
+    with pytest.raises(ClientResponseError) as exc_info:
+        await client.raw(page.url)
+
+    assert exc_info.value.status == 403
+    assert exc_info.value.message == (
+        'This page does not have a SECRET_RAW_ACCESS_CODE set. '
+        'You may still view it over raw by obtaining your own '
+        'code from Rentry admins and setting it as a '
+        'custom header: rentry-auth'
+    )
+
+
+@pytest.mark.anyio
+async def test_raw_bad_access_code(
+    client,
+    pages_registry,
+    generate_page,
+    invalid_raw_access_code,
+):
+    page = generate_page()
+    await pages_registry.add(page)
+
+    with pytest.raises(ClientResponseError) as exc_info:
+        await client.raw(
+            page.url,
+            secret_raw_access_code=invalid_raw_access_code,
+        )
+
+    assert exc_info.value.status == 403
+    assert exc_info.value.message == (
+        'Value for SECRET_RAW_ACCESS_CODE not found. '
+        'Please ensure you are using one given to you by '
+        'Rentry admins.'
+    )
 
 
 @pytest.mark.anyio

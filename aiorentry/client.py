@@ -1,5 +1,5 @@
 from types import TracebackType
-from typing import Any, Type
+from typing import Any, Optional, Type
 
 from aiohttp import (
     ClientResponse, ClientResponseError, ClientSession, DummyCookieJar, web,
@@ -12,6 +12,7 @@ from aiorentry.models import Page
 DEFAULT_BASE_URL = 'https://rentry.org'
 CSRF_COOKIE_NAME = 'csrftoken'
 CSRF_POST_BODY_NAME = 'csrfmiddlewaretoken'
+SECRET_RAW_ACCESS_CODE_HEADER_NAME = 'rentry-auth'
 
 
 class Client:
@@ -193,11 +194,21 @@ class Client:
     async def raw(
         self,
         url: str,
+        secret_raw_access_code: Optional[str] = None,
     ) -> str:
+        if secret_raw_access_code is None:
+            headers = self.__headers
+        else:
+            headers = {
+                **self.__headers,
+                SECRET_RAW_ACCESS_CODE_HEADER_NAME: secret_raw_access_code,
+            }
+
         api_url = self.__base_url.with_path(f'/api/raw/{url}')
 
         async with self.__session.get(
             api_url,
+            headers=headers,
             raise_for_status=True,
         ) as response:
             data = await self.__handle_response(response)
