@@ -52,33 +52,33 @@ def invalid_raw_access_code(valid_raw_access_code):
 
 
 @pytest.fixture
-def pages_registry(randomstr):
+def fake_server_db(randomstr):
     class Registry:
         def __init__(self):
             self.__pages = {}
 
-        async def exists(self, url: str) -> bool:
+        def exists(self, url: str) -> bool:
             return url in self.__pages
 
-        async def get(self, url: str) -> Page:
+        def get(self, url: str) -> Page:
             if url not in self.__pages:
                 raise ValueError
 
             return self.__pages[url]
 
-        async def add(self, page: Page):
+        def add(self, page: Page):
             if page.url in self.__pages:
                 raise ValueError
 
             self.__pages[page.url] = page
 
-        async def update(self, page: Page):
+        def update(self, page: Page):
             if page.url not in self.__pages:
                 raise ValueError
 
             self.__pages[page.url] = page
 
-        async def delete(self, url):
+        def delete(self, url):
             if url not in self.__pages:
                 raise ValueError
 
@@ -96,7 +96,7 @@ def csrf_token(randomstr):
 async def fake_server(
     aiohttp_server,
     csrf_token,
-    pages_registry,
+    fake_server_db,
     randomstr,
     valid_raw_access_code,
 ):
@@ -122,14 +122,14 @@ async def fake_server(
         if not edit_code:
             edit_code = randomstr()
 
-        if await pages_registry.exists(url):
+        if fake_server_db.exists(url):
             return web.json_response({
                 'status': '400',
                 'content': 'Invalid data',
                 'errors': 'This URL is already in use.',
             })
 
-        await pages_registry.add(
+        fake_server_db.add(
             Page(
                 url=url,
                 edit_code=edit_code,
@@ -153,13 +153,13 @@ async def fake_server(
         url = request.match_info['url']
         edit_code = data['edit_code']
 
-        if not await pages_registry.exists(url):
+        if not fake_server_db.exists(url):
             return web.json_response({
                 'status': '404',
                 'content': f'Entry {url} does not exist',
             })
 
-        old_page = await pages_registry.get(url)
+        old_page = fake_server_db.get(url)
 
         if edit_code != old_page.edit_code:
             return web.json_response({
@@ -168,7 +168,7 @@ async def fake_server(
                 'errors': 'Invalid edit code.',
             })
 
-        await pages_registry.update(
+        fake_server_db.update(
             Page(
                 url=url,
                 edit_code=edit_code,
@@ -190,13 +190,13 @@ async def fake_server(
         url = request.match_info['url']
         edit_code = data['edit_code']
 
-        if not await pages_registry.exists(url):
+        if not fake_server_db.exists(url):
             return web.json_response({
                 'status': '404',
                 'content': f'Entry {url} does not exist',
             })
 
-        old_page = await pages_registry.get(url)
+        old_page = fake_server_db.get(url)
 
         if edit_code != old_page.edit_code:
             return web.json_response({
@@ -205,7 +205,7 @@ async def fake_server(
                 'errors': 'Invalid edit code.',
             })
 
-        await pages_registry.delete(url)
+        fake_server_db.delete(url)
 
         return web.Response(
             status=web.HTTPFound.status_code,
@@ -214,7 +214,7 @@ async def fake_server(
     async def raw(request: web.Request):
         url = request.match_info['url']
 
-        if not await pages_registry.exists(url):
+        if not fake_server_db.exists(url):
             return web.json_response({
                 'status': '404',
                 'content': f'Entry {url} does not exist',
@@ -246,7 +246,7 @@ async def fake_server(
                 ),
             })
 
-        page = await pages_registry.get(url)
+        page = fake_server_db.get(url)
 
         return web.json_response({
             'status': '200',
@@ -256,10 +256,10 @@ async def fake_server(
     async def file(request: web.Request, content_type: str):
         url = request.match_info['url']
 
-        if not await pages_registry.exists(url):
+        if not fake_server_db.exists(url):
             raise web.HTTPNotFound
 
-        page = await pages_registry.get(url)
+        page = fake_server_db.get(url)
 
         return web.Response(
             status=web.HTTPOk.status_code,
@@ -293,8 +293,77 @@ async def fake_server_url(fake_server):
 
 
 @pytest.fixture
-async def client(fake_server_url):
-    async with Client(
+def cleanup_registry():
+    class CleanupRegistry:
+        def __init__(self):
+            self.pages = {}
+
+        def add(self, url, edit_code):
+            self.pages[url] = edit_code
+
+        def remove(self, url):
+            del self.pages[url]
+
+        async def cleanup(self, callback):
+            pairs = list(self.pages.items())
+
+            for url, edit_code in pairs:
+                await callback(url=url, edit_code=edit_code)
+
+        def check_empty(self):
+            assert self.pages == {}
+
+    return CleanupRegistry()
+
+
+@pytest.fixture
+def fake_pages_registry(fake_server_db, cleanup_registry):
+    class Registry:
+        async def exists(self, url):
+            return fake_server_db.exists(url)
+
+        async def get_text(self, url):
+            page = fake_server_db.get(url)
+
+            return page.text
+
+        async def add(self, page):
+            fake_server_db.add(page)
+            cleanup_registry.add(page.url, page.edit_code)
+
+    return Registry()
+
+
+@pytest.fixture
+async def client(fake_server_url, cleanup_registry):
+    class PatchedClient(Client):
+        async def new_page(self, *args, **kwargs):
+            page = await super().new_page(*args, **kwargs)
+
+            cleanup_registry.add(page.url, page.edit_code)
+
+            return page
+
+        async def delete_page(self, *args, **kwargs):
+            is_deleted = await super().delete_page(*args, **kwargs)
+
+            if is_deleted:
+                cleanup_registry.remove(kwargs.get('url'))
+
+            print(f'\n Remove page {kwargs.get("url")}: {is_deleted}')
+
+            return is_deleted
+
+    async with PatchedClient(
         base_url=fake_server_url,
     ) as client:
         yield client
+
+        await cleanup_registry.cleanup(client.delete_page)
+
+        cleanup_registry.check_empty()
+
+
+@pytest.fixture
+def pages_registry(fake_pages_registry):
+    return fake_pages_registry

@@ -11,9 +11,9 @@ from aiorentry.client import Client
 async def test_new_page(client, pages_registry):
     page = await client.new_page('##Hello')
 
-    created_page = await pages_registry.get(page.url)
+    created_page_text = await pages_registry.get_text(page.url)
 
-    assert created_page == page
+    assert created_page_text == page.text
 
 
 @pytest.mark.anyio
@@ -31,9 +31,9 @@ async def test_new_page_custom_url_edit_code(
         edit_code=edit_code,
     )
 
-    created_page = await pages_registry.get(page.url)
+    created_page_text = await pages_registry.get_text(page.url)
 
-    assert created_page == page
+    assert created_page_text == page.text
 
 
 @pytest.mark.anyio
@@ -64,9 +64,9 @@ async def test_edit_page(client, pages_registry, generate_page):
         edit_code=page.edit_code,
     )
 
-    updated_page = await pages_registry.get(page.url)
+    updated_page_text = await pages_registry.get_text(page.url)
 
-    assert updated_page == page
+    assert updated_page_text == page.text
 
 
 @pytest.mark.anyio
