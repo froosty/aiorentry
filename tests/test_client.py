@@ -48,7 +48,9 @@ async def test_new_page_url_exists(client, pages_registry, generate_page):
         )
 
     assert exc_info.value.status == 400
-    assert exc_info.value.message == 'This URL is already in use.'
+    assert exc_info.value.message == (
+        'This URL is already in use.This URL is already in use.'
+    )
 
 
 @pytest.mark.anyio
@@ -212,42 +214,6 @@ async def test_raw_bad_access_code(
         'Please ensure you are using one given to you by '
         'Rentry admins.'
     )
-
-
-@pytest.mark.anyio
-async def test_png(client, pages_registry, generate_page):
-    page = generate_page()
-    await pages_registry.add(page)
-
-    file_content = await client.png(page.url)
-
-    assert file_content == page.text.encode('utf-8')
-
-
-@pytest.mark.anyio
-async def test_png_not_found(client, generate_page):
-    page = generate_page()
-
-    with pytest.raises(ClientResponseError):
-        await client.png(page.url)
-
-
-@pytest.mark.anyio
-async def test_pdf(client, pages_registry, generate_page):
-    page = generate_page()
-    await pages_registry.add(page)
-
-    file_content = await client.pdf(page.url)
-
-    assert file_content == page.text.encode('utf-8')
-
-
-@pytest.mark.anyio
-async def test_pdf_not_found(client, generate_page):
-    page = generate_page()
-
-    with pytest.raises(ClientResponseError):
-        await client.pdf(page.url)
 
 
 @pytest.mark.anyio

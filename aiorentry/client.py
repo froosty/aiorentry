@@ -164,22 +164,16 @@ class Client:
         edit_code: str,
     ) -> bool:
         token = await self.__get_csrf_token()
-
         payload = {
             CSRF_POST_BODY_NAME: token,
-            'text': '',
             'edit_code': edit_code,
-            'new_edit_code': '',
-            'new_url': '',
-            'new_modify_code': '',
-            'delete': 'delete',
         }
 
         cookies = {
             CSRF_COOKIE_NAME: token,
         }
 
-        api_url = self.__base_url.with_path(f'/{url}/edit')
+        api_url = self.__base_url.with_path(f'/api/delete/{url}')
 
         async with self.__session.post(
             api_url,
@@ -189,7 +183,9 @@ class Client:
             raise_for_status=True,
             allow_redirects=False,
         ) as response:
-            return response.status == web.HTTPFound.status_code
+            data = await response.json(content_type=None)
+
+            return int(data['status']) == web.HTTPOk.status_code
 
     async def raw(
         self,
@@ -219,22 +215,22 @@ class Client:
         self,
         url: str,
     ) -> bytes:
-        api_url = self.__base_url.with_path(f'/{url}/png')
-
-        async with self.__session.get(
-            api_url,
-            raise_for_status=True,
-        ) as response:
-            return await response.read()
+        raise NotImplementedError(
+            (
+                'This functionality has been removed from the library '
+                'as it is no longer available in the original service via API.'
+                ' This method will be completely removed in the next version.'
+            ),
+        )
 
     async def pdf(
         self,
         url: str,
     ) -> bytes:
-        api_url = self.__base_url.with_path(f'/{url}/pdf')
-
-        async with self.__session.get(
-            api_url,
-            raise_for_status=True,
-        ) as response:
-            return await response.read()
+        raise NotImplementedError(
+            (
+                'This functionality has been removed from the library '
+                'as it is no longer available in the original service via API.'
+                ' This method will be completely removed in the next version.'
+            ),
+        )

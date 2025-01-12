@@ -1,7 +1,9 @@
+import asyncio
+import os
 import uuid
 
 import pytest
-from aiohttp import web
+from aiohttp import ClientResponseError, web
 
 from aiorentry.client import Client
 from aiorentry.models import Page
@@ -9,6 +11,8 @@ from aiorentry.models import Page
 CSRF_COOKIE_NAME = 'csrftoken'
 CSRF_POST_BODY_NAME = 'csrfmiddlewaretoken'
 SECRET_RAW_ACCESS_CODE_HEADER_NAME = 'rentry-auth'
+
+VALID_SECRET_RAW_ACCESS_CODE_ENV_NAME = 'SECRET_RAW_ACCESS_CODE'
 
 
 @pytest.fixture
@@ -37,8 +41,34 @@ def generate_page(randomstr):
 
 
 @pytest.fixture
-def valid_raw_access_code():
-    return uuid.uuid4().hex
+def valid_raw_access_code(request):
+    mode = request.config.getoption('--mode')
+
+    if mode == 'isolated':
+        return uuid.uuid4().hex
+    elif mode == 'live':
+        code = os.environ.get(
+            VALID_SECRET_RAW_ACCESS_CODE_ENV_NAME,
+            None,
+        )
+
+        if code is None:
+            raise RuntimeError(
+                (
+                    'For live test you should set valid '
+                    'SECRET_RAW_ACCESS_CODE. (Via '
+                    f'{VALID_SECRET_RAW_ACCESS_CODE_ENV_NAME} env variable)'
+                ),
+            )
+    else:
+        raise NotImplementedError(
+            f'Unknown mode {mode}',
+        )
+
+    return os.environ.get(
+        VALID_SECRET_RAW_ACCESS_CODE_ENV_NAME,
+        uuid.uuid4().hex,
+    )
 
 
 @pytest.fixture
@@ -126,7 +156,9 @@ async def fake_server(
             return web.json_response({
                 'status': '400',
                 'content': 'Invalid data',
-                'errors': 'This URL is already in use.',
+                'errors': (
+                    'This URL is already in use.This URL is already in use.'
+                ),
             })
 
         fake_server_db.add(
@@ -207,9 +239,10 @@ async def fake_server(
 
         fake_server_db.delete(url)
 
-        return web.Response(
-            status=web.HTTPFound.status_code,
-        )
+        return web.json_response({
+            'status': str(web.HTTPOk.status_code),
+            'content': 'OK',
+        })
 
     async def raw(request: web.Request):
         url = request.match_info['url']
@@ -253,35 +286,13 @@ async def fake_server(
             'content': page.text,
         })
 
-    async def file(request: web.Request, content_type: str):
-        url = request.match_info['url']
-
-        if not fake_server_db.exists(url):
-            raise web.HTTPNotFound
-
-        page = fake_server_db.get(url)
-
-        return web.Response(
-            status=web.HTTPOk.status_code,
-            body=page.text.encode('utf-8'),
-            content_type=content_type,
-        )
-
-    async def pdf(request: web.Request):
-        return await file(request, 'application/pdf')
-
-    async def png(request: web.Request):
-        return await file(request, 'image/png')
-
     app = web.Application()
     app.add_routes([
         web.get('/', index),
         web.post('/api/new', new),
         web.post('/api/edit/{url}', edit),
-        web.post('/{url}/edit', delete),
+        web.post('/api/delete/{url}', delete),
         web.get('/api/raw/{url}', raw),
-        web.get('/{url}/png', png),
-        web.get('/{url}/pdf', pdf),
     ])
 
     return await aiohttp_server(app)
@@ -317,7 +328,7 @@ def cleanup_registry():
 
 
 @pytest.fixture
-def fake_pages_registry(fake_server_db, cleanup_registry):
+def isolated_pages_registry(fake_server_db, cleanup_registry):
     class Registry:
         async def exists(self, url):
             return fake_server_db.exists(url)
@@ -335,7 +346,7 @@ def fake_pages_registry(fake_server_db, cleanup_registry):
 
 
 @pytest.fixture
-async def client(fake_server_url, cleanup_registry):
+async def client(request, fake_server_url, cleanup_registry):
     class PatchedClient(Client):
         async def new_page(self, *args, **kwargs):
             page = await super().new_page(*args, **kwargs)
@@ -350,12 +361,24 @@ async def client(fake_server_url, cleanup_registry):
             if is_deleted:
                 cleanup_registry.remove(kwargs.get('url'))
 
-            print(f'\n Remove page {kwargs.get("url")}: {is_deleted}')
-
             return is_deleted
 
+    mode = request.config.getoption('--mode')
+
+    if mode == 'isolated':
+        url = fake_server_url
+    elif mode == 'live':
+        # Adds a synthetic delay between tests.
+        # Since the service has a rate limiter, but the limits are unknown
+        await asyncio.sleep(1)
+        url = 'https://rentry.co'
+    else:
+        raise NotImplementedError(
+            f'Unknown mode {mode}',
+        )
+
     async with PatchedClient(
-        base_url=fake_server_url,
+        base_url=url,
     ) as client:
         yield client
 
@@ -365,5 +388,56 @@ async def client(fake_server_url, cleanup_registry):
 
 
 @pytest.fixture
-def pages_registry(fake_pages_registry):
-    return fake_pages_registry
+def live_pages_registry(client, valid_raw_access_code, cleanup_registry):
+    class Registry:
+        async def exists(self, url):
+            try:
+                await client.raw(url)
+
+                return True
+            except ClientResponseError as exc:
+                if exc.status == 403:
+                    return True
+                elif exc.status == 404:
+                    return False
+                else:
+                    raise
+
+        async def get_text(self, url):
+            return await client.raw(
+                url,
+                secret_raw_access_code=valid_raw_access_code,
+            )
+
+        async def add(self, page):
+            await client.new_page(
+                page.text,
+                url=page.url,
+                edit_code=page.edit_code,
+            )
+
+    return Registry()
+
+
+@pytest.fixture
+def pages_registry(request, isolated_pages_registry, live_pages_registry):
+    mode = request.config.getoption('--mode')
+
+    if mode == 'isolated':
+        return isolated_pages_registry
+    elif mode == 'live':
+        return live_pages_registry
+    else:
+        raise NotImplementedError(
+            f'Unknown mode {mode}',
+        )
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        '--mode',
+        action='store',
+        default='isolated',
+        choices=('isolated', 'live'),
+        help='Run tests in "live" or "isolated" mode',
+    )
