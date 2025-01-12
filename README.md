@@ -127,10 +127,16 @@ await client.delete_page(
 
 ### Get raw page text
 
+> [!NOTE]
+> This rentry functionality has limitations now. You can't just view the source text of any page.
+
 ```python
 ...
 # Get raw content
-content = await client.raw('awesome-url')
+content = await client.raw(
+    'awesome-url',
+    secret_raw_access_code='YOUR_CODE_HERE',  # optional
+)
 print(content)
 ...
 ```
@@ -139,24 +145,19 @@ print(content)
 ### Updated Hello world
 ```
 
+To view the source text you have 2 options:
+1. Specify your personal code inside page metadata. In this case, everyone will have access to the source text of the page through the API.
+2. Specify your personal code when trying to get the source text of any page. In this case, you will be able to get the source text, regardless of the metadata of the target page
+
 ### Get PDF file
 
-```python
-...
-# Get PDF
-with open('page.pdf', mode='wb') as fp:
-    fp.write(await client.pdf(page.url))
-...
-```
+> [!NOTE]
+> This functionality has been removed from the library as it is no longer available in the original service via API. This method will be completely removed in the next version.
 
 ### Get PNG
 
-```python
-...
-with open('page.png', mode='wb') as fp:
-    fp.write(await client.png(page.url))
-...
-```
+> [!NOTE]
+> This functionality has been removed from the library as it is no longer available in the original service via API. This method will be completely removed in the next version.
 
 ## Custom ClientSession
 
