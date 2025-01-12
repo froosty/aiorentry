@@ -8,3 +8,7 @@ lint:
 
 test:
 	pytest -s -v tests
+
+
+live_test:
+	pytest -s -v tests --mode=live
