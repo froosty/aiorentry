@@ -2,11 +2,11 @@
 
 Asynchronous API client for [rentry.co](https://rentry.co) (mirror: [rentry.org](https://rentry.org))
 
-![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/froosty/aiorentry/lint_and_test.yml)
-![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/froosty/aiorentry/daily_test.yml?label=daily%20check)
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/froosty/aiorentry/lint_and_test.yml)](https://github.com/froosty/aiorentry/actions/workflows/lint_and_test.yml)
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/froosty/aiorentry/daily_test.yml?label=daily%20check)](https://github.com/froosty/aiorentry/actions/workflows/daily_test.yml)
 [![codecov](https://codecov.io/gh/froosty/aiorentry/graph/badge.svg?token=FJBRTOQ2HR)](https://codecov.io/gh/froosty/aiorentry)
 [![PyPI - Version](https://img.shields.io/pypi/v/aiorentry)](https://pypi.org/project/aiorentry/)
-![GitHub License](https://img.shields.io/github/license/froosty/aiorentry)
+[![GitHub License](https://img.shields.io/github/license/froosty/aiorentry)](https://github.com/froosty/aiorentry/blob/main/LICENSE)
 
 ## About
 
