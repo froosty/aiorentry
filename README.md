@@ -14,7 +14,7 @@ This package allows you to interact with the [rentry.co](https://rentry.co) (or 
 
 Rentry.co is a markdown pastebin and publishing service that offers features such as previews, custom URLs, and editing.
 
-**Please note** that this library is not developed by the official authors of rentry.co. It replicates the functionality of the [official console utility](https://github.com/radude/rentry), but provides it as an asynchronous API client. With this package you can manage your pages: create, edit and delete, as well as get data in text, PNG or PDF formats. All directly from your asynchronous Python application.
+**Please note** that this library is not developed by the official authors of rentry.co. It replicates the functionality of the [official console utility](https://github.com/radude/rentry), but provides it as an asynchronous API client. With this package you can manage your pages: create, edit and delete, as well as get raw text. All directly from your asynchronous Python application.
 
 ## Installation
 
