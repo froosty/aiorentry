@@ -43,7 +43,7 @@ flake8-quotes = "^3.4.0"
 isort = ">=5.13.2,<7.0.0"
 flake8-bas = "^1.0.0"
 flake8-pyproject = "^1.2.3"
-mypy = "1.15.0"
+mypy = "1.17.1"
 
 [tool.mypy]
 python_version = "3.10"
