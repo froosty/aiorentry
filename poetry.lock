@@ -403,14 +403,14 @@ files = [
 
 [[package]]
 name = "flake8-builtins"
-version = "2.5.0"
+version = "3.1.0"
 description = "Check for python builtins being used as variables or parameters"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.10"
 groups = ["dev"]
 files = [
-    {file = "flake8_builtins-2.5.0-py3-none-any.whl", hash = "sha256:8cac7c52c6f0708c0902b46b385bc7e368a9068965083796f1431c0d2e6550cf"},
-    {file = "flake8_builtins-2.5.0.tar.gz", hash = "sha256:bdaa3dd823e4f5308c5e712d19fa5f69daa52781ea874f5ea9c3637bcf56faa6"},
+    {file = "flake8_builtins-3.1.0-py3-none-any.whl", hash = "sha256:ac09803ddfcce7f67899d24b1ecf4f4bff303d8ebc07a0dde4a2a587cf9d9363"},
+    {file = "flake8_builtins-3.1.0.tar.gz", hash = "sha256:10d29d7a81ba6546a26461e83ce1936644764a678ff6337b97a894ebc4db07c1"},
 ]
 
 [package.dependencies]
@@ -1299,4 +1299,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "77a206e7db28eb961053c130c97249bd6e8211a33b9d36528de5f141db44b3aa"
+content-hash = "2cd3e0ff3a0b2e9e3fa19d8d3e65df32388ba45e2b4967d82b9f26fb45cad369"
